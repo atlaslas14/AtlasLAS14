@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas Project — Field Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #16263A;
+    --bg-deep: #0F1B2B;
+    --grid-line: rgba(255,255,255,0.045);
+    --paper: #F4EFE2;
+    --paper-edge: #E4DCC8;
+    --ink: #EDE8DA;
+    --ink-soft: rgba(237,232,218,0.6);
+    --ink-dark: #1F2C3D;
+    --ink-dark-soft: #5B6B7E;
+    --gold: #E8A33D;
+    --coral: #E2603A;
+    --route: rgba(232,163,61,0.45);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  body{
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 36px 36px;
+    color: var(--ink);
+    font-family: 'Karla', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--gold); }
+
+  /* ---------- Header ---------- */
+  header{
+    padding: 64px 24px 56px;
+    text-align: center;
+    position: relative;
+    border-bottom: 1px dashed rgba(255,255,255,0.12);
+  }
+
+  .eyebrow{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+  }
+
+  h1{
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(2.6rem, 9vw, 5.5rem);
+    line-height: 1.02;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  h1 span{ color: var(--coral); }
+
+  .subtitle{
+    margin-top: 18px;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .compass{
+    margin: 36px auto 0;
+    width: 64px;
+    height: 64px;
+    opacity: 0.85;
+  }
+
+  /* ---------- Editable note ---------- */
+  .howto{
+    max-width: 640px;
+    margin: 28px auto 0;
+    padding: 14px 18px;
+    border: 1px dashed rgba(232,163,61,0.4);
+    border-radius: 6px;
+    background: rgba(232,163,61,0.06);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-align: left;
+  }
+  .howto strong{ color: var(--gold); }
+
+  /* ---------- Timeline ---------- */
+  .timeline{
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 80px 24px 100px;
+    position: relative;
+  }
+
+  .route{
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--route) 0,
+      var(--route) 10px,
+      transparent 10px,
+      transparent 20px
+    );
+    transform: translateX(-1px);
+  }
+
+  .entry{
+    position: relative;
+    width: 100%;
+    display: flex;
+    margin-bottom: 64px;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .entry.visible{
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .entry:nth-child(odd) .card-wrap{
+    margin-right: auto;
+    padding-right: 56px;
+    text-align: right;
+  }
+  .entry:nth-child(odd) .card{ margin-left: auto; }
+  .entry:nth-child(odd) .stamp{ right: -10px; }
+
+  .entry:nth-child(even) .card-wrap{
+    margin-left: auto;
+    padding-left: 56px;
+    text-align: left;
+  }
+  .entry:nth-child(even) .stamp{ left: -10px; }
+
+  .card-wrap{ width: 50%; position: relative; }
+
+  .stamp{
+    position: absolute;
+    top: 4px;
+    width: 56px;
+    height: 56px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    background: var(--bg-deep);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--gold);
+    transform: rotate(-6deg);
+    z-index: 2;
+    line-height: 1.1;
+    text-align: center;
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px rgba(232,163,61,0.25);
+  }
+
+  .card{
+    display: inline-block;
+    max-width: 420px;
+    background: var(--paper);
+    color: var(--ink-dark);
+    border-radius: 4px;
+    padding: 22px 26px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    position: relative;
+    border: 1px solid var(--paper-edge);
+  }
+
+  .card::before{
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--coral);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .tag{
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--coral);
+    border: 1px solid var(--coral);
+    border-radius: 100px;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+  }
+
+  .date{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-dark-soft);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .card h3{
+    font-family: 'Anton', sans-serif;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
+    line-height: 1.15;
+  }
+
+  .card p{
+    font-size: 0.95rem;
+    color: #2E3D4F;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    text-align: center;
+    padding: 40px 24px 70px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 720px){
+    .route{ left: 28px; }
+
+    .entry{ padding-left: 0; }
+    .card-wrap{
+      width: 100%;
+      padding: 0 0 0 64px !important;
+      text-align: left !important;
+      margin: 0 !important;
+    }
+    .card{ margin: 0 !important; max-width: 100%; }
+
+    .stamp{
+      left: 0 !important;
+      right: auto !important;
+      top: 4px;
+    }
+
+    h1{ font-size: clamp(2.2rem, 12vw, 3.4rem); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Field Log · Atlas Project Course</div>
+  <h1>The Atlas <span>Expedition</span></h1>
+  <p class="subtitle">A running record of notable events, breakthroughs, detours, and discoveries — chronicled by the course's self-appointed historian.</p>
+
+  <svg class="compass" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" stroke="#E8A33D" stroke-width="2" stroke-dasharray="3 5"/>
+    <circle cx="32" cy="32" r="2.5" fill="#E8A33D"/>
+    <path d="M32 8 L37 30 L32 28 L27 30 Z" fill="#E2603A"/>
+    <path d="M32 56 L37 34 L32 36 L27 34 Z" fill="#EDE8DA"/>
+    <text x="32" y="6" fill="#EDE8DA" font-family="JetBrains Mono" font-size="6" text-anchor="middle">N</text>
+  </svg>
+
+  <div class="howto">
+    <strong>HOW TO EDIT:</strong> scroll to the bottom of this file's source and find the <strong>entries</strong> list in the script tag. Each one is a date, a tag, a title, and a short note — add, remove, or rewrite them to log your own Atlas Project events.
+  </div>
+</header>
+
+<div class="timeline">
+  <div class="route"></div>
+  <div id="entries"></div>
+</div>
+
+<footer>
+  COMPILED BY THE OFFICE OF THE SELF-ELECTED HISTORIAN · LAST UPDATED AUTOMATICALLY
+</footer>
+
+<script>
+  // ---- EDIT THIS LIST WITH YOUR REAL ATLAS PROJECT EVENTS ----
+  const entries = [
+    {
+      date: "WEEK 01 · JUN 2026",
+      tag: "Departure",
+      title: "Basecamp Established",
+      note: "First day of the Atlas Project. Coordinates set, gear checked, expectations cautiously optimistic."
+    },
+    {
+      date: "WEEK 02 · JUN 2026",
+      tag: "Discovery",
+      title: "Unmapped Skill Located",
+      note: "Stumbled into a talent nobody (including the historian) knew existed. Logged for further study."
+    },
+    {
+      date: "WEEK 03 · JUN 2026",
+      tag: "Hazard",
+      title: "The Great Deadline Storm",
+      note: "Conditions turned rough mid-week. Team pressed on regardless. Historian notes: morale held."
+    },
+    {
+      date: "WEEK 04 · JUN 2026",
+      tag: "Breakthrough",
+      title: "Signal Found at the Summit",
+      note: "A concept that had been foggy all month suddenly clicked. Recorded as a major turning point."
+    },
+    {
+      date: "WEEK 05 · JUN 2026",
+      tag: "Milestone",
+      title: "Flag Planted on Project One",
+      note: "First major milestone complete. Small celebration held. Photographic evidence pending."
+    },
+    {
+      date: "ONGOING",
+      tag: "Status",
+      title: "Expedition Continues",
+      note: "The map is still being drawn. More entries to come as the journey unfolds."
+    }
+  ];
+
+  const container = document.getElementById('entries');
+
+  entries.forEach((e, i) => {
+    const entry = document.createElement('div');
+    entry.className = 'entry';
+    entry.innerHTML = `
+      <div class="card-wrap">
+        <div class="stamp">WP&#8209;${String(i+1).padStart(2,'0')}</div>
+        <div class="card">
+          <div class="tag">${e.tag}</div>
+          <div class="date">${e.date}</div>
+          <h3>${e.title}</h3>
+          <p>${e.note}</p>
+        </div>
+      </div>
+    `;
+    container.appendChild(entry);
+  });
+
+  // Scroll-reveal animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.entry').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

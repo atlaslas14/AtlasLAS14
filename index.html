@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas Project — Field Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #16263A;
+    --bg-deep: #0F1B2B;
+    --grid-line: rgba(255,255,255,0.045);
+    --paper: #F4EFE2;
+    --paper-edge: #E4DCC8;
+    --ink: #EDE8DA;
+    --ink-soft: rgba(237,232,218,0.6);
+    --ink-dark: #1F2C3D;
+    --ink-dark-soft: #5B6B7E;
+    --gold: #E8A33D;
+    --coral: #E2603A;
+    --route: rgba(232,163,61,0.45);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  body{
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 36px 36px;
+    color: var(--ink);
+    font-family: 'Karla', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding: 64px 24px 56px;
+    text-align: center;
+    border-bottom: 1px dashed rgba(255,255,255,0.12);
+  }
+
+  .eyebrow{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+  }
+
+  h1{
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(2.6rem, 9vw, 5.5rem);
+    line-height: 1.02;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  h1 span{ color: var(--coral); }
+
+  .subtitle{
+    margin-top: 18px;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .compass{
+    margin: 36px auto 0;
+    width: 64px; height: 64px;
+    opacity: 0.85;
+  }
+
+  /* ---------- Timeline ---------- */
+  .timeline{
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 80px 24px 100px;
+    position: relative;
+  }
+
+  .route{
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    width: 2px;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--route) 0, var(--route) 10px,
+      transparent 10px, transparent 20px
+    );
+    transform: translateX(-1px);
+  }
+
+  /* --- Fade & slide in from left or right --- */
+  .entry{
+    position: relative;
+    width: 100%;
+    display: flex;
+    margin-bottom: 64px;
+    opacity: 0;
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+
+  .entry.from-left  { transform: translateX(-48px); }
+  .entry.from-right { transform: translateX(48px); }
+
+  .entry.visible{
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .entry:nth-child(odd) .card-wrap  { margin-right:auto; padding-right:56px; text-align:right; }
+  .entry:nth-child(odd) .card       { margin-left:auto; }
+  .entry:nth-child(odd) .stamp      { right:-10px; }
+  .entry:nth-child(even) .card-wrap { margin-left:auto; padding-left:56px; text-align:left; }
+  .entry:nth-child(even) .stamp     { left:-10px; }
+
+  .card-wrap{ width:50%; position:relative; }
+
+  .stamp{
+    position: absolute;
+    top: 4px;
+    width: 56px; height: 56px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    background: var(--bg-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; font-weight: 700;
+    color: var(--gold);
+    transform: rotate(-6deg);
+    z-index: 2;
+    line-height: 1.1; text-align: center;
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px rgba(232,163,61,0.25);
+  }
+
+  .card{
+    display: inline-block;
+    max-width: 420px;
+    background: var(--paper);
+    color: var(--ink-dark);
+    border-radius: 4px;
+    padding: 22px 26px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    position: relative;
+    border: 1px solid var(--paper-edge);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card::before{
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:4px;
+    background: var(--coral);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .card.has-photos{ cursor:pointer; }
+  .card.has-photos:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,0.35); }
+
+  .tag{
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--coral);
+    border: 1px solid var(--coral);
+    border-radius: 100px;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+  }
+
+  .date{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-dark-soft);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .card h3{
+    font-family: 'Anton', sans-serif;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
+    line-height: 1.15;
+  }
+
+  .card p{ font-size:0.95rem; color:#2E3D4F; }
+
+  .photo-hint{
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--coral);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .entry:nth-child(odd) .photo-hint{ justify-content:flex-end; }
+
+  /* ---------- Submit Section ---------- */
+  .submit-section{
+    border-top: 1px dashed rgba(255,255,255,0.12);
+    padding: 80px 24px 100px;
+    text-align: center;
+  }
+
+  .submit-section .eyebrow{ margin-bottom: 12px; }
+
+  .submit-section h2{
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+
+  .submit-section h2 span{ color: var(--coral); }
+  .submit-section .subtitle{ margin-bottom: 48px; }
+
+  .form-card{
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 36px;
+    text-align: left;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    border: 1px solid var(--paper-edge);
+    position: relative;
+
+    /* fade in when scrolled to */
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+
+  .form-card.visible{
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .form-card::before{
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:5px;
+    background: linear-gradient(90deg, var(--coral), var(--gold));
+    border-radius: 6px 6px 0 0;
+  }
+
+  .form-row{ margin-bottom: 20px; }
+
+  .form-row label{
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-dark-soft);
+    margin-bottom: 6px;
+  }
+
+  .form-row input,
+  .form-row select,
+  .form-row textarea{
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--paper-edge);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: 'Karla', sans-serif;
+    font-size: 0.95rem;
+    color: var(--ink-dark);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-row input:focus,
+  .form-row select:focus,
+  .form-row textarea:focus{ border-color: var(--gold); }
+
+  .form-row textarea{ resize:vertical; min-height:100px; }
+  .form-row input[type="file"]{ padding:8px 10px; font-size:0.85rem; cursor:pointer; }
+
+  .form-row .hint{
+    margin-top: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-dark-soft);
+    letter-spacing: 0.04em;
+  }
+
+  .submit-btn{
+    width: 100%; margin-top: 8px; padding: 14px;
+    background: var(--coral); color: #fff;
+    border: none; border-radius: 4px;
+    font-family: 'Anton', sans-serif;
+    font-size: 1.1rem; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .submit-btn:hover{ background:#c94e2b; transform:translateY(-1px); }
+  .submit-btn:active{ transform:translateY(0); }
+  .submit-btn:disabled{ background:#aaa; cursor:not-allowed; transform:none; }
+
+  .form-success{
+    display: none;
+    text-align: center;
+    padding: 32px 0 8px;
+  }
+  .form-success .big-icon{ font-size:3rem; margin-bottom:12px; }
+  .form-success h3{
+    font-family: 'Anton', sans-serif;
+    font-size: 1.6rem; text-transform: uppercase;
+    color: var(--ink-dark); margin-bottom: 8px;
+  }
+  .form-success p{ font-size:0.95rem; color:var(--ink-dark-soft); }
+
+  /* ---------- Lightbox ---------- */
+  .lightbox-overlay{
+    position:fixed; inset:0;
+    background:rgba(15,27,43,0.88);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; z-index:100;
+    opacity:0; pointer-events:none;
+    transition:opacity 0.25s ease;
+  }
+  .lightbox-overlay.open{ opacity:1; pointer-events:auto; }
+
+  .lightbox-box{
+    background:var(--paper); border-radius:6px;
+    max-width:720px; width:100%;
+    max-height:85vh; overflow-y:auto;
+    padding:28px; position:relative;
+    transform:translateY(16px);
+    transition:transform 0.25s ease;
+  }
+  .lightbox-overlay.open .lightbox-box{ transform:translateY(0); }
+
+  .lightbox-close{
+    position:absolute; top:14px; right:14px;
+    width:36px; height:36px; border-radius:50%;
+    border:1px solid var(--paper-edge);
+    background:var(--bg-deep); color:var(--ink);
+    font-size:1.1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .lightbox-title{
+    font-family:'Anton',sans-serif;
+    font-size:1.6rem; text-transform:uppercase;
+    color:var(--ink-dark); margin-bottom:4px; padding-right:40px;
+  }
+  .lightbox-date{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.78rem; color:var(--ink-dark-soft); margin-bottom:18px;
+  }
+  .lightbox-images{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+  }
+  .lightbox-images img{
+    width:100%; height:200px; object-fit:cover;
+    border-radius:4px; border:1px solid var(--paper-edge);
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    text-align:center;
+    padding:40px 24px 70px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.78rem; color:var(--ink-soft);
+    letter-spacing:0.06em;
+    border-top:1px dashed rgba(255,255,255,0.08);
+  }
+
+  /* ---------- Mobile ---------- */
+  @media(max-width:720px){
+    .route{ left:28px; }
+    .entry{ padding-left:0; }
+    .card-wrap{ width:100%; padding:0 0 0 64px !important; text-align:left !important; margin:0 !important; }
+    .card{ margin:0 !important; max-width:100%; }
+    .stamp{ left:0 !important; right:auto !important; top:4px; }
+    h1{ font-size:clamp(2.2rem,12vw,3.4rem); }
+    .entry:nth-child(odd) .photo-hint{ justify-content:flex-start; }
+    .entry.from-left, .entry.from-right{ transform:translateY(32px); }
+    .lightbox-images img{ height:160px; }
+    .form-card{ padding:24px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Field Log · Atlas Project Course</div>
+  <h1>The Atlas <span>Expedition</span></h1>
+  <p class="subtitle">A running record of notable events, breakthroughs, detours, and discoveries — chronicled by the course's self-appointed historian.</p>
+  <svg class="compass" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" stroke="#E8A33D" stroke-width="2" stroke-dasharray="3 5"/>
+    <circle cx="32" cy="32" r="2.5" fill="#E8A33D"/>
+    <path d="M32 8 L37 30 L32 28 L27 30 Z" fill="#E2603A"/>
+    <path d="M32 56 L37 34 L32 36 L27 34 Z" fill="#EDE8DA"/>
+    <text x="32" y="6" fill="#EDE8DA" font-family="JetBrains Mono" font-size="6" text-anchor="middle">N</text>
+  </svg>
+</header>
+
+<div class="timeline">
+  <div class="route"></div>
+  <div id="entries"></div>
+</div>
+
+<!-- Submit Section -->
+<div class="submit-section">
+  <div class="eyebrow">Contribute to the Record</div>
+  <h2>Submit an <span>Event</span></h2>
+  <p class="subtitle">Witnessed something worth documenting? File a report and the historian will review it for inclusion on the timeline.</p>
+
+  <div class="form-card" id="form-card">
+    <div id="form-inner">
+      <div class="form-row">
+        <label for="f-name">Your Name</label>
+        <input type="text" id="f-name" name="name" placeholder="e.g. Alex Rivera" required />
+      </div>
+      <div class="form-row">
+        <label for="f-date">When did this happen?</label>
+        <input type="text" id="f-date" name="date" placeholder="e.g. Week 3 · June 2026" required />
+      </div>
+      <div class="form-row">
+        <label for="f-title">Event Title</label>
+        <input type="text" id="f-title" name="title" placeholder="e.g. The Great Deadline Storm" required />
+      </div>
+      <div class="form-row">
+        <label for="f-tag">Category Tag</label>
+        <select id="f-tag" name="tag">
+          <option value="Milestone">Milestone</option>
+          <option value="Discovery">Discovery</option>
+          <option value="Breakthrough">Breakthrough</option>
+          <option value="Hazard">Hazard</option>
+          <option value="Departure">Departure</option>
+          <option value="Celebration">Celebration</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="f-note">What happened?</label>
+        <textarea id="f-note" name="note" placeholder="Describe the event in a sentence or two, as the historian would record it..." required></textarea>
+      </div>
+      <div class="form-row">
+        <label for="f-photo">Photo (optional)</label>
+        <input type="file" id="f-photo" name="photo" accept="image/*" />
+        <div class="hint">JPG, PNG or HEIC · Max 5MB · Historian will review before adding</div>
+      </div>
+      <button class="submit-btn" id="submit-btn" type="button" onclick="submitForm()">
+        File Report &#8594;
+      </button>
+    </div>
+    <div class="form-success" id="form-success">
+      <div class="big-icon">📬</div>
+      <h3>Report Filed!</h3>
+      <p>Your entry has been sent to the historian for review. If approved, it'll appear on the timeline shortly.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  COMPILED BY THE OFFICE OF THE SELF-ELECTED HISTORIAN · LAST UPDATED AUTOMATICALLY
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox">
+  <div class="lightbox-box">
+    <button class="lightbox-close" id="lightbox-close">&times;</button>
+    <div class="lightbox-title" id="lightbox-title"></div>
+    <div class="lightbox-date" id="lightbox-date"></div>
+    <div class="lightbox-images" id="lightbox-images"></div>
+  </div>
+</div>
+
+<script>
+  // ---- EDIT YOUR TIMELINE ENTRIES HERE ----
+  const entries = [
+    {
+      date: "WEEK 01 · JUN 2026",
+      tag: "Departure",
+      title: "Basecamp Established",
+      note: "First day of the Atlas Project. Coordinates set, gear checked, expectations cautiously optimistic.",
+      images: []
+    },
+    {
+      date: "WEEK 02 · JUN 2026",
+      tag: "Discovery",
+      title: "Unmapped Skill Located",
+      note: "Stumbled into a talent nobody (including the historian) knew existed. Logged for further study.",
+      images: []
+    },
+    {
+      date: "WEEK 03 · JUN 2026",
+      tag: "Hazard",
+      title: "The Great Deadline Storm",
+      note: "Conditions turned rough mid-week. Team pressed on regardless. Historian notes: morale held.",
+      images: []
+    },
+    {
+      date: "WEEK 04 · JUN 2026",
+      tag: "Breakthrough",
+      title: "Signal Found at the Summit",
+      note: "A concept that had been foggy all month suddenly clicked. Recorded as a major turning point.",
+      images: []
+    },
+    {
+      date: "WEEK 05 · JUN 2026",
+      tag: "Milestone",
+      title: "Flag Planted on Project One",
+      note: "First major milestone complete. Small celebration held. Photographic evidence pending.",
+      images: []
+    },
+    {
+      date: "ONGOING",
+      tag: "Status",
+      title: "Expedition Continues",
+      note: "The map is still being drawn. More entries to come as the journey unfolds.",
+      images: []
+    }
+  ];
+
+  // ---- TIMELINE RENDERING ----
+  const container = document.getElementById('entries');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxClose = document.getElementById('lightbox-close');
+  const lightboxTitle = document.getElementById('lightbox-title');
+  const lightboxDate = document.getElementById('lightbox-date');
+  const lightboxImages = document.getElementById('lightbox-images');
+
+  function openLightbox(e){
+    lightboxTitle.textContent = e.title;
+    lightboxDate.textContent = e.date;
+    lightboxImages.innerHTML = '';
+    e.images.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src; img.alt = e.title;
+      lightboxImages.appendChild(img);
+    });
+    lightbox.classList.add('open');
+  }
+
+  function closeLightbox(){ lightbox.classList.remove('open'); }
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', ev => { if(ev.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', ev => { if(ev.key === 'Escape') closeLightbox(); });
+
+  entries.forEach((e, i) => {
+    const hasPhotos = e.images && e.images.length > 0;
+    const isOdd = i % 2 === 0; // 0-indexed: even index = odd child = left side
+
+    const entry = document.createElement('div');
+    // Left cards slide from left, right cards slide from right
+    entry.className = `entry ${isOdd ? 'from-left' : 'from-right'}`;
+
+    entry.innerHTML = `
+      <div class="card-wrap">
+        <div class="stamp">WP&#8209;${String(i+1).padStart(2,'0')}</div>
+        <div class="card ${hasPhotos ? 'has-photos' : ''}">
+          <div class="tag">${e.tag}</div>
+          <div class="date">${e.date}</div>
+          <h3>${e.title}</h3>
+          <p>${e.note}</p>
+          ${hasPhotos ? `<div class="photo-hint">📷 Tap to view photos (${e.images.length})</div>` : ''}
+        </div>
+      </div>`;
+
+    if(hasPhotos) entry.querySelector('.card').addEventListener('click', () => openLightbox(e));
+    container.appendChild(entry);
+  });
+
+  // ---- SCROLL REVEAL with staggered delay ----
+  const revealObserver = new IntersectionObserver((observed) => {
+    observed.forEach((item, idx) => {
+      if(item.isIntersecting){
+        // Small stagger per card so they don't all pop at once
+        setTimeout(() => {
+          item.target.classList.add('visible');
+        }, idx * 80);
+        revealObserver.unobserve(item.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.entry').forEach(el => revealObserver.observe(el));
+
+  // Fade in the form card too
+  const formObserver = new IntersectionObserver((obs) => {
+    obs.forEach(item => {
+      if(item.isIntersecting){
+        item.target.classList.add('visible');
+        formObserver.unobserve(item.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  formObserver.observe(document.getElementById('form-card'));
+
+  // ---- FORM SUBMISSION ----
+  async function submitForm(){
+    const btn   = document.getElementById('submit-btn');
+    const name  = document.getElementById('f-name').value.trim();
+    const date  = document.getElementById('f-date').value.trim();
+    const title = document.getElementById('f-title').value.trim();
+    const tag   = document.getElementById('f-tag').value;
+    const note  = document.getElementById('f-note').value.trim();
+    const photo = document.getElementById('f-photo').files[0];
+
+    if(!name || !date || !title || !note){
+      alert('Please fill in all required fields before submitting.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('date', date);
+    formData.append('title', title);
+    formData.append('tag', tag);
+    formData.append('note', note);
+    if(photo) formData.append('photo', photo);
+
+    try {
+      const res = await fetch('https://formspree.io/f/xdavbrko', {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if(res.ok){
+        document.getElementById('form-inner').style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'File Report →';
+        alert('Something went wrong. Please try again.');
+      }
+    } catch(err){
+      btn.disabled = false;
+      btn.textContent = 'File Report →';
+      alert('Network error. Please check your connection and try again.');
+    }
+  }
+</script>
+
+</body>
+</html>
